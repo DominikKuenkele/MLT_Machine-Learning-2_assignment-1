@@ -8,8 +8,21 @@ from torch import optim
 
 class CaptionEncoder(nn.Module):
     def __init__(self, vocab_size, embedding_dim, out_dim, num_layers, padding_idx, glove_vectors=None) -> None:
+        """
+        Encodes an image caption.
+
+        Args:
+            vocab_size (int): if GloVe is not used, the vocab_size is the number of embeddings
+            embedding_dim: if GloVe is not used, the dimension of embeddings
+            out_dim: ouput dimensions of the LSTM
+            num_layers: number of layers of LSTM
+            padding_idx: index in vocab that represents the padding token
+            glove_vectors: if set, model will initialize embeddings with these vectors and freeze to prevent training.
+                This can be turned on with `embeddings.weight.requires_grad = True` e.g. after a few epochs.
+                The vocab_size and embedding_dim will be taken from GloVe vectors.
+        """
         super(CaptionEncoder, self).__init__()
-        if embedding_dim == -1:
+        if glove_vectors != None:
             embedding_dim = glove_vectors.dim
             self.embeddings = nn.Embedding.from_pretrained(glove_vectors.vectors, freeze=True)
         else:
@@ -20,6 +33,9 @@ class CaptionEncoder(nn.Module):
         self.out_dimension = out_dim * 2 * num_layers
 
     def forward(self, caption_batch):
+        """
+        Takes a batch of captions in the shape of (batch, words). Words already need to be a tensor. 
+        """
         embeddings = self.embeddings(caption_batch)
         dropped_out = self.dropout(embeddings)
         _, (h_n, _) = self.rnn(dropped_out)
@@ -53,6 +69,12 @@ class ImageEncoder(nn.Module):
 
 class CaptionEvaluator(nn.Module):
     def __init__(self, caption_encoder, image_encoder, hidden_size) -> None:
+        """
+        Args:
+            caption_encoder: instance of CaptionEncoder
+            image_encoder: instance of ImageEncoder
+            hidden_size: output dimension of first linear layer
+        """
         super(CaptionEvaluator, self).__init__()
 
         self.caption_encoder = caption_encoder
@@ -90,6 +112,8 @@ def train(caption_evaluator, train_dataloader, hyperparameters, device):
     glove_training_epoch = int(0.5 * hyperparameters['epochs']) 
 
     for epoch in range(hyperparameters['epochs']):
+
+        # turn on fine tuning of GloVe vectors after few epochs to prevent loosing pretained information in the first steps.
         if epoch == glove_training_epoch:
             caption_evaluator.caption_encoder.embeddings.weight.requires_grad = True
 
