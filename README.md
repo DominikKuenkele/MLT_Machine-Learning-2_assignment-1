@@ -1,7 +1,7 @@
 # lt2326-assignment_1
 > Part of the Master in Language Technology at the University of Gothenburg
 >
-> **Course:** Machine learning for statistical NLP: introduction (LT2326)
+> **Course:** Machine learning for statistical NLP: advanced (LT2326)
 >
 > **Assignment:** Assignment 1
 
